@@ -4,17 +4,27 @@
 
 ## 🎯 设计哲学
 
-*   **极简 API**：不再需要根据类型选择 `Int32N` 或 `Uint64N`。一个 `Int(min, max)` 搞定所有整数，一个 `Float(min, max)` 搞定所有浮点数。
-*   **需求导向**：我们认为“范围随机”是业务中最直观的需求。因此，所有函数默认支持 `[min, max]` 或 `[min, max)` 区间，无需手动计算偏移。
-*   **零摩擦防御**：遵循“No-Panic”准则。即使传入错误的区间（如 `min > max`），库也会平滑处理并返回合理边界，绝不导致进程崩溃。
-*   **极致性能**：提供 `Fast` 系列函数，通过 `sync.Pool` 维护高性能 PCG 生成器池，彻底解决多核环境下的全局锁竞争瓶颈。
+*   **极简 API**：不再需要区分类型名。一个 `Int(min, max)` 搞定所有。
+*   **需求导向**：所有函数默认支持范围随机，无需手动计算偏移。
+*   **零摩擦防御**：遵循“No-Panic”准则，自动处理反向区间等异常输入。
+*   **极致性能**：通过 `Fast` 系列函数彻底解决多核环境下的全局锁竞争瓶颈。
 
-## 🚀 核心特性
+## 🛠 API Reference
 
-*   **全类型泛型支持**：支持 `int`, `int64`, `uint32`, `float64` 等所有基础数字类型。
-*   **负数区间支持**：原生支持如 `rand.Int(-100, 100)` 这样的跨零随机。
-*   **高性能并发**：`FastInt` 和 `FastFloat` 在高并发场景下比标准库快数倍。
-*   **便捷工具**：`Byte()`, `Bytes(n)`, `Perm(n)`, `Shuffle()` 一应俱全。
+### 基础随机函数 (基于标准库全局生成器)
+- `func Int[T IntegerType](min, max T) T`：获取 `[min, max]` 闭区间随机整数。
+- `func Float[T FloatType](min, max T) T`：获取 `[min, max)` 左闭右开区间随机浮点数。
+
+### 高性能随机函数 (基于 PCG 无锁池)
+在高并发 Server 场景下，推荐使用以下函数以获得极致吞吐量。
+- `func FastInt[T IntegerType](min, max T) T`
+- `func FastFloat[T FloatType](min, max T) T`
+
+### 字节与切片
+- `func Byte() byte`
+- `func Bytes(n int) []byte`
+- `func Perm(n int) []int`
+- `func Shuffle(n int, swap func(i, j int))`
 
 ## 📦 安装
 
@@ -27,20 +37,12 @@ go get apigo.cc/go/rand
 ```go
 import "apigo.cc/go/rand"
 
-// 1. 基础随机 (默认使用全局生成器)
+// 基础随机
 num := rand.Int(1, 100)        // 返回 [1, 100] 的 int
-val := rand.Int[int64](0, 1e12) // 返回大数 int64
 
-// 2. 负数范围
-score := rand.Int(-50, -10)   // 完美支持
-
-// 3. 浮点随机
-prob := rand.Float(0.0, 1.0)  // 返回 [0, 1.0) 的 float64
-
-// 4. 高并发场景 (推荐)
-// 在高并发 Server 中使用 Fast 系列函数以消除锁竞争
+// 高并发场景 (推荐)
 userID := rand.FastInt(1000, 9999)
 
-// 5. 字节处理
-key := rand.Bytes(16) // 生成 16 字节随机切片
+// 字节处理
+key := rand.Bytes(16)
 ```
