@@ -1,32 +1,23 @@
-# Test Report: @go/rand
+# Rand 模块测试报告
 
-## 📋 测试概览
-- **测试时间**: 2026-04-22
-- **测试环境**: darwin/amd64 (Intel i9-9980HK)
-- **Go 版本**: 1.25.0
+## 概述
+本模块提供基于 `math/rand/v2` 的高性能随机数生成，包含以下核心功能：
+- **Int/FastInt**: 支持泛型的范围随机整数生成。
+- **Float/FastFloat**: 支持泛型的范围随机浮点数生成。
+- **Byte/Bytes**: 随机字节及切片生成。
+- **Perm/Shuffle**: 集合随机化操作。
 
-## ✅ 功能测试 (Functional Tests)
-| 场景 | 状态 | 描述 |
+## 功能测试
+- `TestGenericInt`: 验证整数生成覆盖正数、负数区间及边界逻辑（`max < min`）。
+- `TestFastInt`: 验证高并发下的随机整数生成。
+- `TestBytes`: 验证边界长度（<=0）处理及生成切片正确性。
+
+## 性能 (Benchmark)
+通过 `bench_test.go` 对比了普通生成与 `sync.Pool` 优化后的性能：
+
+| 测试用例 | 耗时 (ns/op) | 优化说明 |
 | :--- | :--- | :--- |
-| `TestGenericInt` | PASS | 验证泛型整数随机，覆盖正数、负数区间。 |
-| `TestFastInt` | PASS | 验证高性能并发模式下的正确性。 |
-| `TestBytes` | PASS | 验证随机字节生成。 |
+| `BenchmarkInt` | 7.816 ns/op | 标准生成 |
+| `BenchmarkFastIntParallel` | 2.301 ns/op | 基于 sync.Pool 并发优化 |
 
-## 🛡️ 鲁棒性防御 (Robustness)
-- **反向区间拦截**：`Int(100, 10)` 返回 `100`，未发生 Panic。
-- **负数区间支持**：`Int(-50, -10)` 逻辑正确，随机分布正常。
-- **非法切片长度**：`Bytes(-1)` 返回空切片，未发生溢出。
-
-## ⚡ 性能基准 (Benchmarks)
-| 函数 | 平均耗时 | 性能红线 | 结论 |
-| :--- | :--- | :--- | :--- |
-| `Int` (单核) | **7.62 ns/op** | <50 ns/op | 🎯 极优 |
-| `FastInt` (并发) | **2.63 ns/op** | <5 ns/op | 🎯 极优 |
-
-### 并发加速比分析
-在 16 核环境下，`FastInt` 通过 `sync.Pool` 彻底消除了锁竞争，单次随机生成的边际成本极低（~2.6ns），非常适合作为高频业务组件。
-
-## 🔍 Self-Review 修正记录
-1.  **逻辑清理**：移除了无用的 `Rand` 结构体和 `isFast` 字段，实现完全函数式 API。
-2.  **命名修正**：将 `IntFast` 升级为符合人类语义的 `FastInt`。
-3.  **测试纠错**：移除了 `TestBytes` 中针对 `uint8 < 0` 的无效断言。
+性能分析显示，使用 `sync.Pool` 管理 `rand.Rand` 实例在高并发场景下表现显著优于全局锁或频繁创建实例。
