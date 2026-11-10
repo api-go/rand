@@ -33,13 +33,13 @@
 ## 📦 安装
 
 ```bash
-go get apigo.cc/go/rand
+go get github.com/api-go/rand
 ```
 
 ## 💡 快速开始
 
 ```go
-import "apigo.cc/go/rand"
+import "github.com/api-go/rand"
 
 // 基础随机
 num := rand.Int(1, 100)        // 返回 [1, 100] 的 int

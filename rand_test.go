@@ -3,7 +3,7 @@ package rand_test
 import (
 	"testing"
 
-	"apigo.cc/go/rand"
+	"github.com/api-go/rand"
 )
 
 func TestGenericInt(t *testing.T) {
